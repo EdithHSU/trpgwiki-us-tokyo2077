@@ -1,0 +1,19 @@
+{
+  "name": "wiki-relation-graph",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "關係圖頁面用的 React Flow 小程式；打包輸出到 ../docs/relations/app/",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.12.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.3.0",
+    "vite": "^8.3.8"
+  }
+}

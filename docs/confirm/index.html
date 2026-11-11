@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>待確認名詞</title>
+<!--
+  2077東京之影 團錄 Wiki：待確認名詞的填寫表單。
+  網站上的網址是 <site_url>/confirm/（不在導覽列、不給搜尋引擎收錄）。
+  - 共用模式（API_URL 有填）：輸入名字與通關密語後填寫，答案即時存進 Google 試算表，
+    每題下方列出其他人的答案；名字相同（不分大小寫、全半形、前後空白）就視為同一人，答案合併。
+    後端程式與安裝步驟見 wiki\tools\confirm-sheet.gs。
+  - 本機模式（API_URL 空白）：答案只暫存在瀏覽器，用「儲存 JSON」存成 confirm-answers.json。
+  題目資料在下方 ITEMS；新增題目時沿用同樣的欄位，id 不要重複、不要改已經用過的 id
+  （試算表用 id 對應答案）。
+-->
+<style>
+  :root {
+    --bg: #ffffff; --bg-2: #f7f7f5; --text: #37352f; --text-2: rgba(55,53,47,.65); --text-3: rgba(55,53,47,.45);
+    --line: rgba(55,53,47,.09); --hover: rgba(55,53,47,.06); --callout: #f1f1ef;
+    --accent: #2383e2; --ok: #0f7b6c; --ok-bg: #dbeddb; --warn: #d9730d; --warn-bg: #faebdd; --chip: #ebeced;
+    --focus: rgba(35,131,226,.35);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #191919; --bg-2: #202020; --text: rgba(255,255,255,.81); --text-2: rgba(255,255,255,.46); --text-3: rgba(255,255,255,.28);
+      --line: rgba(255,255,255,.094); --hover: rgba(255,255,255,.055); --callout: #252525;
+      --ok: #4dab9a; --ok-bg: #2b3b38; --warn: #ffa344; --warn-bg: #3d3124; --chip: #373737;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { font-size: 16px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 24px 120px; }
+
+  /* 頂部工具列 */
+  .bar {
+    position: sticky; top: 0; z-index: 10; background: var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+  .bar-inner { max-width: 860px; margin: 0 auto; padding: 10px 24px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .progress { flex: 1 1 200px; min-width: 160px; }
+  .progress-text { font-size: 14px; color: var(--text-2); }
+  .progress-track { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin-top: 4px; }
+  .progress-fill { height: 100%; width: 0; background: var(--ok); transition: width .2s; }
+  button, .btn {
+    font: inherit; font-size: 14px; color: var(--text); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover { filter: brightness(1.08); }
+  button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .saved { font-size: 13px; color: var(--text-3); white-space: nowrap; }
+  .me { font-size: 13px; color: var(--text-2); white-space: nowrap; }
+  .me b { color: var(--text); font-weight: 600; }
+
+  h1 { font-size: 40px; font-weight: 700; line-height: 1.2; margin: 56px 0 8px; }
+  .lead { color: var(--text-2); margin: 0 0 16px; }
+  .callout { background: var(--callout); border-radius: 6px; padding: 14px 16px; margin: 16px 0 24px; font-size: 15px; }
+  .callout ol { margin: 4px 0 0; padding-left: 1.4em; }
+  body:not(.online) .only-online, body.online .only-local { display: none !important; }
+
+  /* 登入 */
+  .back { margin: 24px 0 0; font-size: 14px; }
+  .back a { color: var(--text-2); text-decoration: none; }
+  .back a:hover { color: var(--text); text-decoration: underline; }
+  .gate { max-width: 560px; padding: 20px 24px; }
+  .gate-title { font-size: 18px; }
+  .gate p { margin: 4px 0 14px; color: var(--text-2); }
+  .gate form { display: grid; grid-template-columns: auto 1fr; gap: 10px 12px; align-items: center; }
+  .gate label { font-size: 14px; color: var(--text-2); }
+  .gate input {
+    font: inherit; font-size: 15px; color: var(--text); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; width: 100%;
+  }
+  .gate .gate-actions { grid-column: 2; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .gate-msg { font-size: 14px; color: var(--warn); }
+
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0 8px; }
+  .filters input[type=search] {
+    flex: 1 1 220px; font: inherit; font-size: 15px; color: var(--text); background: var(--bg-2);
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px;
+  }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; padding: 6px 12px; }
+  .seg button[aria-pressed="true"] { background: var(--hover); font-weight: 600; }
+
+  h2 { font-size: 24px; font-weight: 600; margin: 40px 0 4px; }
+  .group-desc { color: var(--text-2); font-size: 15px; margin: 0 0 12px; }
+
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin: 12px 0; }
+  .card.done { border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); }
+  .card-head { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; }
+  .q { font-size: 16px; font-weight: 600; margin: 0; }
+  .badge { flex: none; font-size: 12px; border-radius: 3px; padding: 1px 6px; background: var(--chip); color: var(--text-2); white-space: nowrap; }
+  .badge.ok { background: var(--ok-bg); color: var(--ok); }
+  .badge.unsure { background: var(--warn-bg); color: var(--warn); }
+  .meta { font-size: 14px; color: var(--text-2); margin: 6px 0 10px; }
+  .meta b { color: var(--text); font-weight: 500; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+  .label { font-size: 13px; color: var(--text-3); min-width: 72px; }
+  .chip {
+    font-size: 14px; border: 1px solid var(--line); background: var(--chip); color: var(--text);
+    border-radius: 999px; padding: 2px 10px; cursor: pointer;
+  }
+  .chip:hover { filter: brightness(.96); }
+  input.answer {
+    flex: 1 1 260px; font: inherit; font-size: 16px; color: var(--text); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px;
+  }
+  textarea.note {
+    width: 100%; font: inherit; font-size: 14px; color: var(--text); background: var(--bg-2);
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; min-height: 36px; resize: vertical;
+  }
+  .opt { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; user-select: none; }
+  .opt:has(input:checked) { background: var(--hover); border-color: var(--text-3); font-weight: 600; }
+  .opt input { margin: 0; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .actions button { font-size: 13px; padding: 4px 10px; }
+
+  /* 其他人的答案 */
+  .others { margin-top: 12px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 14px; }
+  .others-title { font-size: 13px; color: var(--text-3); margin-bottom: 2px; }
+  .other { color: var(--text-2); }
+  .other b { color: var(--text); font-weight: 500; }
+  .other-note { display: block; font-size: 13px; color: var(--text-3); padding-left: 1em; white-space: pre-wrap; }
+
+  .empty { color: var(--text-3); padding: 24px 0; text-align: center; }
+  .hidden { display: none !important; }
+
+  @media (max-width: 600px) {
+    .wrap, .bar-inner { padding-left: 16px; padding-right: 16px; }
+    h1 { font-size: 30px; margin-top: 32px; }
+    .label { min-width: 0; width: 100%; }
+    .gate form { grid-template-columns: 1fr; }
+    .gate .gate-actions { grid-column: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="bar-inner">
+    <div class="progress">
+      <div class="progress-text" id="progressText">已填 0 / 0</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <span class="saved" id="savedHint">尚未修改</span>
+    <span class="me only-online hidden" id="me"></span>
+    <button id="btnSwitch" class="only-online hidden" type="button">換人</button>
+    <button id="btnRefresh" class="only-online hidden" type="button">重新整理</button>
+    <button id="btnExport" class="only-online hidden" type="button">下載全部答案</button>
+    <button id="btnImport" class="only-local" type="button">載入 JSON</button>
+    <button id="btnSave" class="primary only-local" type="button">儲存 JSON</button>
+    <input type="file" id="fileInput" accept="application/json,.json" class="hidden">
+  </div>
+</div>
+
+<main class="wrap">
+  <p class="back"><a href="../">← 回到 Wiki</a></p>
+  <h1>待確認名詞</h1>
+  <p class="lead">2077東京之影 團錄 Wiki 整理時，從語音辨識逐字稿推測、還沒確定的名字與細節。</p>
+
+  <section class="callout gate only-online hidden" id="gate">
+    <b class="gate-title">開始填寫</b>
+    <p>輸入你的名字和通關密語。名字可以用角色名或暱稱；<b>名字一樣就算同一個人</b>，答案會合併在一起，換手機或電腦時輸入同一個名字就能接著填。</p>
+    <form id="gateForm" autocomplete="on">
+      <label for="gateName">名字</label>
+      <input id="gateName" name="nickname" maxlength="30" required autocomplete="nickname">
+      <label for="gateKey">通關密語</label>
+      <input id="gateKey" type="password" required autocomplete="current-password">
+      <div class="gate-actions">
+        <button class="primary" type="submit" id="gateBtn">開始填寫</button>
+        <span class="gate-msg" id="gateMsg" role="status"></span>
+      </div>
+    </form>
+  </section>
+
+  <div id="app">
+    <div class="callout">
+      <b>怎麼填</b>
+      <ol class="only-online">
+        <li>知道正確答案就直接填；網站目前的寫法正確，按「目前寫法正確」。</li>
+        <li>點「辨識到的寫法」可以把它帶進輸入框再修改。</li>
+        <li>不記得就按「不確定」，或直接跳過。</li>
+        <li>答案會<b>自動存到共用的答案表</b>，每題下方會列出其他人填的答案；填到一半關掉也沒關係，下次打開會接著填。</li>
+      </ol>
+      <ol class="only-local">
+        <li>知道正確答案就直接填；網站目前的寫法正確，按「目前寫法正確」。</li>
+        <li>點「辨識到的寫法」可以把它帶進輸入框再修改。</li>
+        <li>不記得就按「不確定」，或直接跳過。</li>
+        <li>填寫內容會自動暫存在這個瀏覽器裡；全部填完（或想先存一次）時按右上角「<b>儲存 JSON</b>」，存成 <code>wiki\tools\confirm-answers.json</code>。</li>
+      </ol>
+    </div>
+
+    <div class="filters">
+      <input type="search" id="search" placeholder="搜尋題目、名字或集數…" aria-label="搜尋">
+      <div class="seg" role="group" aria-label="篩選">
+        <button type="button" data-filter="all" aria-pressed="true">全部</button>
+        <button type="button" data-filter="todo" aria-pressed="false">未填</button>
+        <button type="button" data-filter="done" aria-pressed="false">已填</button>
+      </div>
+    </div>
+
+    <div id="list"></div>
+    <p class="empty hidden" id="empty">沒有符合的題目。</p>
+  </div>
+</main>
+
+<script>
+/* ---------- 題目資料 ----------
+   type: name（填寫正確寫法）／who（勾選隊員，可複選）／fact（對、不對、不確定）／choice（單選 options）
+   cur：網站目前的寫法；alts：語音辨識出現過的寫法；ep：出現的集數；ctx：補充說明 */
+const PCS = ["神田進次郎", "綾目真理子", "天邪", "伊蘭尼爾"];
+const GROUPS = [
+  { id: 'people', title: '人物的名字', desc: '網站目前沿用名詞表的寫法，或因為不確定而沒有寫出名字。' },
+  { id: 'places', title: '地點與物品的名字', desc: '' },
+  { id: 'who', title: '是誰做的', desc: '摘要中標示「推測」的說話者或行動者，網站目前都寫成「一名隊員」。可以複選。' },
+  { id: 'facts', title: '推論核對', desc: '把不同集數串起來的推論，或劇情細節的判斷。' },
+  { id: 'terms', title: '怪物與術語的正式譯名', desc: '網站目前用的是辨識出來的寫法，不確定是不是正式譯名。' },
+  { id: 'misc', title: '其他', desc: '' },
+];
+const ITEMS = [
+  // 範例（id 不可重複、之後不可改）：
+  // { id: 'npc-xxx', g: 'people', type: 'name', q: '問題', cur: '網站目前的寫法', alts: ['辨識出的寫法'], ep: '出現的集數', ctx: '補充說明' },
+  { id: 'npc-higanbana-guard', g: 'people', type: 'name', q: '彼岸花吸血鬼保全團隊的領頭叫什麼名字？', cur: '（網站沒有寫出名字）', alts: ['黑木鋼寺'], ep: '第二次建角' },
+  { id: 'npc-higanbana-courier', g: 'people', type: 'name', q: '潛伏在黑羚運輸、替彼岸花轉貨的凡人領頭叫什麼名字？', cur: '（網站沒有寫出名字）', alts: ['早川城'], ep: '第二次建角' },
+  { id: 'npc-higanbana-fairy', g: 'people', type: 'name', q: '彼岸花妖精馴獸師團隊的領頭叫什麼名字？', cur: '（網站沒有寫出名字）', alts: ['白鳳林營（辨識不清）'], ep: '第二次建角' },
+  { id: 'npc-nagano', g: 'people', type: 'name', q: '白板上「永野堂」首領的名字怎麼寫？', cur: '（網站沒有收錄）', alts: ['永野慎太郎', '永野順太郎'], ctx: '團員在第二次建角時也想不起「永野」的來由。' },
+  { id: 'fact-elaniel-nagano', g: 'facts', type: 'choice', q: '伊蘭尼爾屬於哪個勢力？', options: ['永野堂', '沒有所屬勢力', '其他（寫在備註）'], ctx: '白板關係圖把伊蘭尼爾畫在永野堂（永野慎太郎）底下，網站目前寫「待確認」。' },
+  { id: 'fact-kurogazelle-usami', g: 'facts', type: 'fact', q: '黑羚運輸是宇佐美集團旗下的公司嗎？', ctx: '白板關係圖把黑羚運輸畫在宇佐美集團底下，錄音裡沒有提到。網站目前沒有寫。' },
+  { id: 'fact-makoto-surname', g: 'facts', type: 'choice', q: '真理子保護的魔偶，名字要寫成哪一個？', options: ['綾目真實', '宇佐美真實'], ctx: '角色卡寫綾目真實（表面身分是真理子的養子），建角時說成宇佐美真實。網站目前寫綾目真實。' },
+  { id: 'fact-ruri-age', g: 'facts', type: 'choice', q: '綾目琉璃幾歲？', options: ['54 歲', '56 歲'], ctx: '角色卡兩處寫的不一樣。網站目前沒有寫年齡。' },
+  { id: 'fact-wakamiya-family', g: 'facts', type: 'fact', q: '自維黨鷹派領導人若宮竹虎，和方舟的若宮朝陽是同一個若宮家的人嗎？', ctx: '補充文獻說若宮朝陽是政治世家若宮家的么子，代號「蒼鷹」來自若宮家的家紋。網站目前沒有把兩人連起來。' },
+];
+
+/* ---------- 設定 ----------
+   Google Apps Script 網頁應用程式的網址（後端與安裝步驟見 wiki\tools\confirm-sheet.gs）。
+   空白時是本機模式：答案只存在這個瀏覽器，用「儲存 JSON」存檔。 */
+const API_URL = '';  // 部署 tools/confirm-sheet.gs 後填入網頁應用程式網址
+const ONLINE = !!API_URL;
+if (ONLINE) document.body.classList.add('online');
+
+/* ---------- 狀態 ---------- */
+const LOCAL_KEY = 'tokyo2077-confirm-terms-v1';     // 本機模式的答案
+const SESSION_KEY = 'tokyo2077-confirm-online-v1';  // 共用模式的名字、通關密語與還沒同步的答案
+let answers = {};                                 // 自己的答案：id → { answer, who, note, status }
+let session = { name: '', key: '', pending: {} };
+let others = {}, lastRows = [];                   // 其他人的答案：id → [row]；lastRows 是整張答案表
+let filter = 'all', query = '', fileHandle = null, dirty = false, syncTimer = null, syncing = false;
+
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const blank = () => ({ answer: '', who: [], note: '', status: '' });
+const get = id => (answers[id] ||= blank());
+// 名字相同就算同一人：統一全半形、空白與大小寫（後端用一樣的規則）
+const cleanName = s => String(s ?? '').normalize('NFKC').trim().replace(/\s+/g, ' ');
+const nameKey = s => cleanName(s).toLowerCase();
+const clock = () => { const t = new Date(); return `${t.getHours()}:${String(t.getMinutes()).padStart(2, '0')}`; };
+const hint = msg => { $('#savedHint').textContent = msg; };
+
+function readStore(k, fallback) { try { return JSON.parse(localStorage.getItem(k) || 'null') || fallback; } catch (e) { return fallback; } }
+function writeStore(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+if (ONLINE) { session = { ...session, ...readStore(SESSION_KEY, {}) }; session.pending ||= {}; }
+else answers = readStore(LOCAL_KEY, {});
+
+function isDone(item) {
+  const a = answers[item.id];
+  if (!a) return false;
+  return a.status === 'confirmed' || a.status === 'unsure' || !!(a.answer && a.answer.trim()) || (a.who && a.who.length > 0);
+}
+
+function persist(id) {
+  if (ONLINE) {
+    if (id) session.pending[id] = { ...blank(), ...answers[id] };
+    writeStore(SESSION_KEY, session);
+    scheduleSync();
+  } else {
+    writeStore(LOCAL_KEY, answers);
+    dirty = true;
+    hint('已暫存在瀏覽器（尚未儲存 JSON）');
+  }
+  updateProgress();
+}
+
+/* ---------- 畫面 ---------- */
+function cardHTML(item) {
+  const a = answers[item.id] || {};
+  const status = isDone(item) ? (a.status === 'unsure' ? '<span class="badge unsure">不確定</span>' : '<span class="badge ok">已填</span>') : '<span class="badge">未填</span>';
+  let meta = `<div class="meta">`;
+  if (item.cur) meta += `網站目前：<b>${esc(item.cur)}</b>　`;
+  if (item.guess) meta += `摘要推測：<b>${esc(item.guess)}</b>　`;
+  meta += `集數：${esc(item.ep)}`;
+  if (item.ctx) meta += `<br>${esc(item.ctx)}`;
+  meta += `</div>`;
+
+  let body = '';
+  if (item.type === 'name') {
+    if (item.alts?.length) body += `<div class="row"><span class="label">辨識到的寫法</span>${item.alts.map(t => `<button type="button" class="chip" data-fill="${esc(t)}">${esc(t)}</button>`).join('')}</div>`;
+    body += `<div class="row"><span class="label">正確寫法</span><input class="answer" type="text" data-field="answer" value="${esc(a.answer)}" placeholder="輸入正確的名字或譯名" aria-label="正確寫法"></div>`;
+  } else if (item.type === 'who') {
+    const who = a.who || [];
+    body += `<div class="row"><span class="label">是誰</span>${[...PCS, '其他'].map(p => `<label class="opt"><input type="checkbox" data-who="${esc(p)}" ${who.includes(p) ? 'checked' : ''}>${esc(p)}</label>`).join('')}</div>`;
+  } else if (item.type === 'fact' || item.type === 'choice') {
+    const opts = item.type === 'fact' ? ['對', '不對'] : item.options;
+    body += `<div class="row"><span class="label">答案</span>${opts.map(o => `<label class="opt"><input type="radio" name="r-${item.id}" data-radio="${esc(o)}" ${a.answer === o ? 'checked' : ''}>${esc(o)}</label>`).join('')}</div>`;
+  }
+  body += `<textarea class="note" data-field="note" rows="1" placeholder="備註（可不填）" aria-label="備註">${esc(a.note)}</textarea>`;
+
+  const actions = [];
+  if (item.type === 'name' && item.cur && !item.cur.startsWith('（')) actions.push(`<button type="button" data-act="keep">目前寫法正確</button>`);
+  if (item.type === 'who' && item.guess) actions.push(`<button type="button" data-act="guess">推測正確</button>`);
+  actions.push(`<button type="button" data-act="unsure">不確定</button>`);
+  actions.push(`<button type="button" data-act="clear">清除</button>`);
+
+  return `<article class="card ${isDone(item) ? 'done' : ''}" data-id="${item.id}">
+    <div class="card-head"><p class="q">${esc(item.q)}</p>${status}</div>
+    ${meta}${body}
+    <div class="actions">${actions.join('')}</div>
+    <div class="others-slot">${othersHTML(item.id)}</div>
+  </article>`;
+}
+
+function describe(r) {
+  const parts = [];
+  if (r.answer) parts.push(r.answer);
+  if (r.who?.length) parts.push(r.who.join('、'));
+  if (r.status === 'unsure') parts.push('不確定');
+  return parts.join('，') || '（只寫了備註）';
+}
+
+function othersHTML(id) {
+  const rows = others[id] || [];
+  if (!rows.length) return '';
+  return `<div class="others"><div class="others-title">其他人的答案（${rows.length}）</div>${rows.map(r =>
+    `<div class="other"><b>${esc(r.name)}</b>：${esc(describe(r))}${r.note ? `<span class="other-note">${esc(r.note)}</span>` : ''}</div>`).join('')}</div>`;
+}
+
+function updateOthers() {
+  document.querySelectorAll('.card').forEach(card => { card.querySelector('.others-slot').innerHTML = othersHTML(card.dataset.id); });
+}
+
+function render() {
+  const list = $('#list');
+  let html = '', shown = 0;
+  for (const g of GROUPS) {
+    const items = ITEMS.filter(i => i.g === g.id).filter(matches);
+    if (!items.length) continue;
+    shown += items.length;
+    html += `<section><h2>${esc(g.title)}</h2>${g.desc ? `<p class="group-desc">${esc(g.desc)}</p>` : ''}${items.map(cardHTML).join('')}</section>`;
+  }
+  list.innerHTML = html;
+  $('#empty').classList.toggle('hidden', shown > 0);
+  updateProgress();
+}
+
+function matches(item) {
+  if (filter === 'todo' && isDone(item)) return false;
+  if (filter === 'done' && !isDone(item)) return false;
+  if (!query) return true;
+  const hay = [item.q, item.cur, item.guess, item.ep, item.ctx, ...(item.alts || []), answers[item.id]?.answer, answers[item.id]?.note].join(' ');
+  return hay.toLowerCase().includes(query.toLowerCase());
+}
+
+function updateProgress() {
+  const done = ITEMS.filter(isDone).length;
+  $('#progressText').textContent = `已填 ${done} / ${ITEMS.length}`;
+  $('#progressFill').style.width = `${(done / ITEMS.length) * 100}%`;
+}
+
+function refreshCard(id) {
+  const item = ITEMS.find(i => i.id === id);
+  const old = document.querySelector(`.card[data-id="${id}"]`);
+  if (!old) return;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = cardHTML(item);
+  old.replaceWith(tmp.firstElementChild);
+}
+
+function refreshBadge(id) {
+  const item = ITEMS.find(i => i.id === id);
+  const card = document.querySelector(`.card[data-id="${id}"]`);
+  if (!card) return;
+  const a = answers[id] || {};
+  card.classList.toggle('done', isDone(item));
+  const badge = card.querySelector('.badge');
+  badge.className = 'badge' + (isDone(item) ? (a.status === 'unsure' ? ' unsure' : ' ok') : '');
+  badge.textContent = isDone(item) ? (a.status === 'unsure' ? '不確定' : '已填') : '未填';
+}
+
+/* ---------- 互動 ---------- */
+document.addEventListener('input', e => {
+  const card = e.target.closest('.card'); if (!card) return;
+  const id = card.dataset.id, a = get(id), f = e.target.dataset.field;
+  if (f) {
+    a[f] = e.target.value;
+    if (f === 'answer') a.status = e.target.value.trim() ? 'confirmed' : '';
+    persist(id); refreshBadge(id);
+  }
+});
+
+document.addEventListener('change', e => {
+  const card = e.target.closest('.card'); if (!card) return;
+  const id = card.dataset.id, a = get(id);
+  if (e.target.dataset.who !== undefined) {
+    const p = e.target.dataset.who;
+    a.who = (a.who || []).filter(x => x !== p);
+    if (e.target.checked) a.who.push(p);
+    a.status = a.who.length ? 'confirmed' : '';
+    persist(id); refreshBadge(id);
+  } else if (e.target.dataset.radio !== undefined) {
+    a.answer = e.target.dataset.radio; a.status = 'confirmed';
+    persist(id); refreshBadge(id);
+  }
+});
+
+document.addEventListener('click', e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  const card = btn.closest('.card');
+  if (card) {
+    const id = card.dataset.id, item = ITEMS.find(i => i.id === id), a = get(id);
+    if (btn.dataset.fill !== undefined) {
+      const input = card.querySelector('input.answer');
+      input.value = btn.dataset.fill; a.answer = btn.dataset.fill; a.status = 'confirmed';
+      persist(id); refreshBadge(id); input.focus();
+      return;
+    }
+    const act = btn.dataset.act;
+    if (act === 'keep') { a.answer = item.cur; a.status = 'confirmed'; }
+    else if (act === 'guess') { a.who = item.guess.split('、'); a.status = 'confirmed'; }
+    else if (act === 'unsure') { a.status = 'unsure'; }
+    else if (act === 'clear') { answers[id] = blank(); }
+    else return;
+    persist(id); refreshCard(id);
+    return;
+  }
+  if (btn.dataset.filter) {
+    filter = btn.dataset.filter;
+    document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+    render();
+  }
+});
+
+$('#search').addEventListener('input', e => { query = e.target.value.trim(); render(); });
+
+/* ---------- 共用模式：與 Google 試算表同步 ---------- */
+async function api(body) {
+  // 不設 Content-Type（預設 text/plain），瀏覽器就不會先送 CORS 預檢，Apps Script 才收得到
+  const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(body) });
+  const data = await res.json();
+  if (!data.ok) { const err = new Error(data.error); err.code = data.error; throw err; }
+  return data.rows || [];
+}
+
+function applyRows(rows, loadMine) {
+  lastRows = rows;
+  const me = nameKey(session.name);
+  others = {};
+  if (loadMine) answers = {};
+  for (const r of rows) {
+    if (r.key === me) {
+      if (loadMine) answers[r.id] = { answer: r.answer || '', who: r.who || [], note: r.note || '', status: r.status || '' };
+    } else (others[r.id] ||= []).push(r);
+  }
+  // 還沒同步成功的修改蓋在試算表的資料上面
+  if (loadMine) for (const [id, a] of Object.entries(session.pending)) answers[id] = { ...a };
+}
+
+function scheduleSync(delay = 1200) {
+  clearTimeout(syncTimer);
+  hint('有修改，準備同步…');
+  syncTimer = setTimeout(sync, delay);
+}
+
+async function sync() {
+  clearTimeout(syncTimer); syncTimer = null;
+  if (syncing) { syncTimer = setTimeout(sync, 800); return; }
+  syncing = true;
+  const sent = Object.entries(session.pending).map(([id, a]) => [id, JSON.stringify(a)]);
+  hint(sent.length ? '同步中…' : '更新中…');
+  try {
+    const rows = await api(sent.length
+      ? { action: 'save', key: session.key, name: session.name, items: sent.map(([id, s]) => ({ id, ...JSON.parse(s) })) }
+      : { action: 'list', key: session.key });
+    // 送出後又改過的題目留著，下一輪再送
+    for (const [id, s] of sent) if (JSON.stringify(session.pending[id]) === s) delete session.pending[id];
+    writeStore(SESSION_KEY, session);
+    applyRows(rows, false);
+    updateOthers();
+    hint(Object.keys(session.pending).length ? '有修改，準備同步…' : `已同步（${clock()}）`);
+  } catch (err) {
+    if (err.code === 'bad_key') showGate('通關密語已經更換，請重新輸入。');
+    else { hint('同步失敗，30 秒後重試（答案先暫存在這個瀏覽器）'); syncTimer = setTimeout(sync, 30000); }
+  } finally {
+    syncing = false;
+  }
+}
+
+function showGate(msg = '') {
+  $('#gate').classList.remove('hidden');
+  $('#app').classList.add('hidden');
+  document.querySelectorAll('.progress, #me, #btnSwitch, #btnRefresh, #btnExport').forEach(el => el.classList.add('hidden'));
+  $('#gateName').value = session.name || '';
+  $('#gateMsg').textContent = msg;
+  $(session.name ? '#gateKey' : '#gateName').focus();
+  hint('');
+}
+
+function enterApp() {
+  $('#gate').classList.add('hidden');
+  $('#app').classList.remove('hidden');
+  document.querySelectorAll('.progress, #me, #btnSwitch, #btnRefresh, #btnExport').forEach(el => el.classList.remove('hidden'));
+  $('#me').innerHTML = `填寫人：<b>${esc(session.name)}</b>`;
+  render();
+}
+
+async function login(name, key) {
+  const rows = await api({ action: 'list', key });
+  if (nameKey(name) !== nameKey(session.name)) session.pending = {};
+  session.name = name; session.key = key;
+  writeStore(SESSION_KEY, session);
+  applyRows(rows, true);
+  enterApp();
+  const mine = rows.filter(r => r.key === nameKey(name)).length;
+  hint(mine ? `「${name}」之前填過 ${mine} 題，已載入，答案會合併在一起` : `已連線（${clock()}）`);
+  if (Object.keys(session.pending).length) scheduleSync(300);
+}
+
+$('#gateForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = cleanName($('#gateName').value), key = $('#gateKey').value.trim();
+  if (!name || !key) return;
+  $('#gateBtn').disabled = true; $('#gateMsg').textContent = '連線中…';
+  try { await login(name, key); $('#gateKey').value = ''; }
+  catch (err) { $('#gateMsg').textContent = err.code === 'bad_key' ? '通關密語不對。' : '連不上答案表，請稍後再試。'; }
+  finally { $('#gateBtn').disabled = false; }
+});
+
+$('#btnSwitch').addEventListener('click', async () => {
+  if (Object.keys(session.pending).length) await sync();
+  const n = Object.keys(session.pending).length;
+  if (n && !confirm(`還有 ${n} 題沒有同步成功，換人會丟掉這些修改。確定要換人嗎？`)) return;
+  session = { name: '', key: '', pending: {} };
+  writeStore(SESSION_KEY, session);
+  answers = {}; others = {}; lastRows = [];
+  showGate();
+});
+
+$('#btnRefresh').addEventListener('click', () => sync());
+
+$('#btnExport').addEventListener('click', async () => {
+  await sync();
+  const data = {
+    source: 'wiki/docs/confirm/index.html',
+    exported_at: new Date().toISOString(),
+    total: ITEMS.length,
+    people: [...new Set(lastRows.map(r => r.name))],
+    items: ITEMS.map(i => ({
+      ...baseItem(i),
+      responses: lastRows.filter(r => r.id === i.id).map(r => ({
+        name: r.name, answer: r.answer || null, who: r.who?.length ? r.who : null,
+        status: r.status || 'unanswered', note: r.note || null, updated: r.updated,
+      })),
+    })),
+  };
+  download(JSON.stringify(data, null, 2) + '\n', 'confirm-answers.json');
+  hint('已下載 confirm-answers.json，請移到 wiki\\tools\\');
+});
+
+// 關掉分頁時把還沒送出的修改盡量送出去（送不成也還留在瀏覽器，下次打開會再送）
+window.addEventListener('pagehide', () => {
+  if (!ONLINE || !session.key || !Object.keys(session.pending).length) return;
+  const items = Object.entries(session.pending).map(([id, a]) => ({ id, ...a }));
+  navigator.sendBeacon?.(API_URL, new Blob([JSON.stringify({ action: 'save', key: session.key, name: session.name, items })], { type: 'text/plain;charset=UTF-8' }));
+});
+
+/* ---------- 本機模式：儲存與載入 JSON ---------- */
+function baseItem(i) {
+  return {
+    id: i.id, group: GROUPS.find(g => g.id === i.g).title, type: i.type, question: i.q,
+    episodes: i.ep, current_on_site: i.cur ?? null, recognized_as: i.alts ?? null, guess: i.guess ?? null,
+  };
+}
+
+function buildExport() {
+  return {
+    source: 'wiki/docs/confirm/index.html',
+    exported_at: new Date().toISOString(),
+    total: ITEMS.length,
+    answered: ITEMS.filter(isDone).length,
+    items: ITEMS.map(i => {
+      const a = answers[i.id] || {};
+      return {
+        ...baseItem(i),
+        answer: a.answer || null, who: a.who?.length ? a.who : null, status: a.status || 'unanswered', note: a.note || null,
+      };
+    }),
+  };
+}
+
+function download(text, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+async function saveJSON() {
+  const text = JSON.stringify(buildExport(), null, 2) + '\n';
+  try {
+    if (window.showSaveFilePicker) {
+      if (!fileHandle) {
+        fileHandle = await window.showSaveFilePicker({
+          suggestedName: 'confirm-answers.json',
+          types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+        });
+      }
+      const w = await fileHandle.createWritable();
+      await w.write(text); await w.close();
+      markSaved(`已儲存到 ${fileHandle.name}`);
+      return;
+    }
+  } catch (err) {
+    if (err && err.name === 'AbortError') return;
+    fileHandle = null; // 權限失效等狀況，改用下載
+  }
+  download(text, 'confirm-answers.json');
+  markSaved('已下載 confirm-answers.json，請移到 wiki\\tools\\');
+}
+
+function markSaved(msg) {
+  dirty = false;
+  hint(`${msg}（${clock()}）`);
+}
+
+$('#btnSave').addEventListener('click', saveJSON);
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); ONLINE ? sync() : saveJSON(); }
+});
+
+$('#btnImport').addEventListener('click', () => $('#fileInput').click());
+$('#fileInput').addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    const items = Array.isArray(data.items) ? data.items : [];
+    let n = 0;
+    for (const it of items) {
+      if (!ITEMS.some(i => i.id === it.id)) continue;
+      answers[it.id] = {
+        answer: it.answer || '', who: it.who || [], note: it.note || '',
+        status: it.status === 'unanswered' ? '' : (it.status || ''),
+      };
+      n++;
+    }
+    persist(); render();
+    hint(`已從 ${file.name} 載入 ${n} 題`);
+  } catch (err) {
+    alert('無法讀取這個檔案，請確認是這個表單儲存的 JSON。');
+  }
+  e.target.value = '';
+});
+
+window.addEventListener('beforeunload', e => {
+  const unsaved = ONLINE ? (syncing || Object.keys(session.pending).length > 0) : dirty;
+  if (unsaved) { e.preventDefault(); e.returnValue = ''; }
+});
+
+/* ---------- 開始 ---------- */
+// 共用模式每次打開都先填名字與通關密語（名字帶入上次用的）
+if (!ONLINE) render();
+else showGate();
+</script>
+</body>
+</html>

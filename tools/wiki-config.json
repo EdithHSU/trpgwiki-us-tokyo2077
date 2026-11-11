@@ -1,0 +1,67 @@
+{
+  "site_name": "2077東京之影 團錄 Wiki",
+  "site_url": "https://edithhsu.github.io/trpgwiki-us-tokyo2077/",
+  "description": "《城市之影》第二版「2077東京之影」戰役的劇情整理",
+  "slug": "tokyo2077",
+  "tuanlu_dir": "D:\\企劃\\TRPG\\2077東京之影",
+  "home_emoji": "🌃",
+  "intro": "這裡整理了我們《城市之影》第二版（Urban Shadows 2E）「2077東京之影」戰役每一集的劇情，以及登場的角色、勢力與地點。2077 年的東京與日本其他地方幾乎隔絕，凡人、夜眷、能者與化外在這座城市裡爭奪權力與生存。",
+  "episodes": {
+    "folder": "episodes",
+    "label": "集數",
+    "emoji": "📜"
+  },
+  "categories": [
+    {
+      "folder": "characters",
+      "label": "玩家角色",
+      "emoji": "🎭"
+    },
+    {
+      "folder": "npcs",
+      "label": "NPC",
+      "emoji": "👤"
+    },
+    {
+      "folder": "factions",
+      "label": "勢力",
+      "emoji": "🏛️"
+    },
+    {
+      "folder": "places",
+      "label": "地點",
+      "emoji": "🗼"
+    }
+  ],
+  "chapters": [],
+  "properties": [
+    {
+      "key": "playbook",
+      "icon": "📖",
+      "label": "扮演書"
+    },
+    {
+      "key": "circle",
+      "icon": "🌗",
+      "label": "社群"
+    },
+    {
+      "key": "faction",
+      "icon": "🏛️",
+      "label": "所屬勢力"
+    },
+    {
+      "key": "standing",
+      "icon": "⭐",
+      "label": "地位"
+    }
+  ],
+  "pcs": [
+    "神田進次郎",
+    "綾目真理子",
+    "天邪",
+    "伊蘭尼爾"
+  ],
+  "confirm": true,
+  "relationships": false
+}

@@ -1,0 +1,186 @@
+/* 關係圖（React Flow）。顏色沿用網站 extra.css 的 --n-* 變數，深淺色自動跟著切換。
+   卡片大小要和 hooks/graph.py 的 CARD_W、CARD_H 一致。 */
+
+/* 這一頁的內文欄放寬，讓圖有空間 */
+.md-content__inner:has(#relation-graph) { max-width: none !important; }
+.md-main__inner:has(#relation-graph) .md-sidebar--secondary { display: none !important; }
+
+#relation-graph {
+  height: min(78vh, 900px);
+  min-height: 480px;
+  margin-top: 12px;
+  border: 1px solid var(--n-divider, rgba(55, 53, 47, .09));
+  border-radius: 10px;
+  overflow: hidden;
+  color: var(--n-text-2, #777);
+}
+
+.rg {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--n-bg, #fff);
+  color: var(--n-text, #37352f);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.rg--full { position: fixed; inset: 0; z-index: 200; }
+.rg .react-flow { --xy-background-color: var(--n-bg, #fff); }
+.rg .react-flow__node { cursor: pointer; transition: opacity .2s; }
+.rg--edit .react-flow__node { cursor: grab; }
+.rg .react-flow__node.rg-dim { opacity: .22; }
+.rg .react-flow__edge { transition: opacity .2s; }
+.rg .react-flow__edge.rg-edge-idle { opacity: .28; }
+.rg .react-flow__edge.rg-dim-edge { opacity: .05; }
+.rg .react-flow__edge.rg-edge-on { opacity: 1; }
+.rg .react-flow__edge-path { transition: stroke-width .2s; }
+.rg .react-flow__edge-path { fill: none; }
+/* Material 的 .md-typeset svg { max-width: 100% } 會把線的 svg 壓成寬度 0 而不顯示 */
+.rg .react-flow svg { max-width: none; }
+.rg .react-flow__attribution { background: transparent; opacity: .6; }
+.rg .react-flow__minimap { border-radius: 8px; overflow: hidden; box-shadow: var(--n-shadow); }
+.rg .react-flow__controls { box-shadow: var(--n-shadow); border-radius: 6px; overflow: hidden; }
+
+.rg-handle {
+  opacity: 0;
+  pointer-events: none;
+  top: 50%; left: 50%;
+  width: 1px; height: 1px; min-width: 0; min-height: 0;
+  border: 0;
+}
+
+/* 人物卡片 */
+.rg-card {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 168px;
+  height: 52px;
+  padding: 0 10px;
+  border: 1px solid var(--n-divider, rgba(55, 53, 47, .16));
+  border-radius: 8px;
+  background: var(--n-bg, #fff);
+  box-shadow: rgba(15, 15, 15, .06) 0 1px 2px;
+}
+.rg-card--pc { border-color: var(--n-orange, #d9730d); box-shadow: 0 0 0 1px var(--n-orange, #d9730d); }
+.rg-card--unconfirmed { border-style: dashed; }
+.rg-selected .rg-card { box-shadow: 0 0 0 2px var(--n-blue, #0b6e99); border-color: var(--n-blue, #0b6e99); }
+.rg-card__emoji { font-size: 22px; line-height: 1; }
+.rg-card__body { display: flex; flex-direction: column; min-width: 0; }
+.rg-card__title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rg-card__sub { font-size: 12px; color: var(--n-text-2, #787774); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 勢力框 */
+.rg .react-flow__node-group { padding: 0; border: 0; background: transparent; box-shadow: none; }
+.rg-group {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--n-divider, rgba(55, 53, 47, .16));
+  border-radius: 12px;
+  background: rgba(135, 131, 120, .07);
+}
+.rg-group--unconfirmed { border-style: dashed; }
+.rg-selected .rg-group { border-color: var(--n-blue, #0b6e99); box-shadow: 0 0 0 1px var(--n-blue, #0b6e99); }
+.rg-group__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  font-weight: 600;
+  color: var(--n-text-2, #787774);
+  white-space: nowrap;
+}
+.rg-group__title { color: var(--n-text, #37352f); }
+
+.rg-tag {
+  padding: 0 6px;
+  border-radius: 3px;
+  background: var(--n-gray-bg, #ebeced);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--n-text-2, #787774);
+  white-space: nowrap;
+}
+
+/* 線上的標籤（畫在線的 SVG 裡，所以會在卡片底下） */
+.rg-edge-label { pointer-events: none; }
+.rg-edge-label rect { fill: var(--n-bg, #fff); stroke: currentColor; stroke-width: 1; }
+.rg-edge-label text { fill: currentColor; font-size: 12px; font-weight: 600; }
+
+/* 勢力框蓋在線上面，但框本身不擋滑鼠：線仍然可以 hover，點框的標題列才會選取框 */
+.rg .react-flow__node-group { pointer-events: none !important; }
+.rg .react-flow__node-group .rg-group__head,
+.rg .react-flow__node-group .react-flow__resize-control { pointer-events: auto; }
+.rg--edit .react-flow__node-group .rg-group__head { cursor: grab; }
+
+/* 面板 */
+.rg-panel {
+  position: absolute;
+  z-index: 5;
+  border-radius: 8px;
+  background: var(--n-bg, #fff);
+  box-shadow: var(--n-shadow, rgba(15, 15, 15, .1) 0 3px 6px);
+}
+/* 分層面板：橫向一列，少擋一點圖 */
+.rg-layers { top: 10px; left: 10px; max-width: calc(100% - 20px); padding: 6px 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.rg--full .rg-layers { max-width: calc(100% - 340px); }
+.rg-layer { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+.rg-layer input { margin: 0; }
+.rg-layers__actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.rg-hint { flex-basis: 100%; }
+.rg button { font: inherit; color: inherit; cursor: pointer; }
+.rg-layers__actions button {
+  padding: 2px 8px;
+  border: 1px solid var(--n-divider, rgba(55, 53, 47, .16));
+  border-radius: 4px;
+  background: transparent;
+  font-size: 13px;
+}
+.rg-layers__actions button:hover { background: var(--n-hover, rgba(55, 53, 47, .06)); }
+.rg-layers__actions .rg-primary { background: var(--n-blue, #0b6e99); border-color: transparent; color: #fff; }
+.rg-hint { margin-top: 6px; font-size: 12px; color: var(--n-text-2, #787774); }
+
+.rg-info { top: 10px; right: 10px; width: 300px; max-width: calc(100% - 20px); max-height: calc(100% - 20px); overflow: auto; padding: 14px; }
+.rg-close { position: absolute; top: 6px; right: 8px; border: 0; background: transparent; font-size: 20px; line-height: 1; color: var(--n-text-2, #787774); }
+.rg-info__head { display: flex; align-items: center; gap: 8px; padding-right: 20px; }
+.rg-info__emoji { font-size: 26px; line-height: 1; }
+.rg-info__title { font-size: 17px; font-weight: 700; }
+.rg-info__sub { margin-top: 2px; color: var(--n-text-2, #787774); }
+.rg-info__text { margin: 8px 0; }
+.rg-info__link { color: var(--n-blue, #0b6e99); font-weight: 600; text-decoration: none; }
+.rg-info__link:hover { text-decoration: underline; }
+.rg-info__section { margin: 12px 0 4px; font-size: 12px; font-weight: 600; color: var(--n-text-2, #787774); }
+.rg-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.rg-chip { padding: 1px 8px; border: 1px solid var(--n-divider, rgba(55, 53, 47, .16)); border-radius: 12px; background: transparent; font-size: 13px; }
+.rg-chip:hover { background: var(--n-hover, rgba(55, 53, 47, .06)); }
+.rg-rel { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.rg-rel li { display: flex; gap: 8px; margin: 0; }
+.rg-rel__dot { flex: none; width: 8px; height: 8px; margin-top: 7px; border-radius: 50%; }
+.rg-rel__mark { color: var(--n-text-2, #787774); }
+.rg-rel__name { padding: 0; border: 0; background: transparent; font-weight: 600; text-decoration: underline; text-decoration-color: var(--n-underline, rgba(55, 53, 47, .4)); }
+.rg-rel__label { margin-left: 6px; font-size: 12px; font-weight: 600; }
+.rg-rel__note { display: block; font-size: 13px; color: var(--n-text-2, #787774); }
+
+/* 滑鼠移到線上的說明 */
+.rg-tip {
+  position: fixed;
+  z-index: 300;
+  max-width: 280px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--n-bg, #fff);
+  color: var(--n-text-2, #787774);
+  box-shadow: var(--n-shadow, rgba(15, 15, 15, .2) 0 3px 12px);
+  font-size: 13px;
+  pointer-events: none;
+}
+.rg-tip__head { display: flex; flex-wrap: wrap; gap: 6px; font-weight: 600; color: var(--n-text, #37352f); }
+
+@media (max-width: 720px) {
+  #relation-graph { height: 70vh; }
+  .rg-info { top: auto; bottom: 10px; left: 10px; right: 10px; width: auto; max-height: 45%; }
+  .rg .react-flow__minimap { display: none; }
+}

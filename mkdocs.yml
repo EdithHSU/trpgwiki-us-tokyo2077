@@ -1,0 +1,142 @@
+site_name: 2077東京之影 團錄 Wiki
+site_url: https://edithhsu.github.io/trpgwiki-us-tokyo2077/
+site_description: 《城市之影》第二版「2077東京之影」戰役的劇情整理
+docs_dir: docs
+
+theme:
+  name: material
+  language: zh-TW
+  font: false              # 用系統字型（仿 Notion），不從 Google Fonts 載入
+  palette:                 # 顏色在 stylesheets/extra.css 以 Notion 色票覆寫
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: 切換為深色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: 切換為淺色模式
+  features:
+    # 上一頁／下一頁由 hooks/notion.py 產生在內文欄底部，依 nav 順序翻頁
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.tooltips
+
+plugins:
+  - search:
+      jieba_dict_user: jieba_dict.txt
+
+hooks:
+  - hooks/previews.py      # hover 預覽，必須在 backlinks.py 之前
+  - hooks/backlinks.py
+  - hooks/graph.py         # 關係圖資料（data/relations.yml → relations/graph.json）
+  - hooks/notion.py        # 必須在 backlinks.py 之後
+
+extra:
+  generator: false
+  # 分類、章節、屬性列與表單入口的設定，hooks/ 兩支程式都讀這裡（說明見 hooks/notion.py 開頭）
+  wiki:
+    episodes: "episodes"
+    chapters: []
+    confirm: true
+    categories:
+      - {"folder": "episodes", "label": "集數", "emoji": "📜"}
+      - {"folder": "characters", "label": "玩家角色", "emoji": "🎭"}
+      - {"folder": "npcs", "label": "NPC", "emoji": "👤"}
+      - {"folder": "factions", "label": "勢力", "emoji": "🏛️"}
+      - {"folder": "places", "label": "地點", "emoji": "🗼"}
+    properties:
+      - {"key": "playbook", "icon": "📖", "label": "扮演書"}
+      - {"key": "circle", "icon": "🌗", "label": "社群"}
+      - {"key": "faction", "icon": "🏛️", "label": "所屬勢力"}
+      - {"key": "standing", "icon": "⭐", "label": "地位"}
+
+# 本機預覽時，關係圖的資料檔有變動也要重新建站
+watch:
+  - data
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/previews.js
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  # 人物關係圖用 mermaid（Material 會自動載入並套用深淺色主題）
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+      # 保留中文標題作為錨點（預設會變成 _1、_2）
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+
+# 新增頁面時要加進這裡；集數依劇情順序排列（上一頁／下一頁照這個順序）
+nav:
+  - 首頁: index.md
+  - 時間線: timeline.md
+  - 名詞表: glossary.md
+  - 關係圖: relations/index.md
+  - 玩家角色:
+      - 神田進次郎: characters/神田進次郎.md
+      - 綾目真理子: characters/綾目真理子.md
+      - 天邪: characters/天邪.md
+      - 伊蘭尼爾: characters/伊蘭尼爾.md
+  - 勢力:
+      - 創世紀: factions/創世紀.md
+      - 方舟: factions/方舟.md
+      - 自維黨: factions/自維黨.md
+      - 穹蒼之女: factions/穹蒼之女.md
+      - 宇佐美集團: factions/宇佐美集團.md
+      - 黑羚運輸: factions/黑羚運輸.md
+      - 鬼頭組: factions/鬼頭組.md
+      - 夢想家: factions/夢想家.md
+      - 東京司法協會: factions/東京司法協會.md
+      - 東京區域自治團體: factions/東京區域自治團體.md
+      - 守民黨: factions/守民黨.md
+  - NPC:
+      - 宇佐美惠子: npcs/宇佐美惠子.md
+      - 宇佐美真司: npcs/宇佐美真司.md
+      - 茉莉: npcs/茉莉.md
+      - 宇佐美真理繪: npcs/宇佐美真理繪.md
+      - 綾目琉璃: npcs/綾目琉璃.md
+      - 綾目真實: npcs/綾目真實.md
+      - 神田司: npcs/神田司.md
+      - 若宮竹虎: npcs/若宮竹虎.md
+      - 根辻律: npcs/根辻律.md
+      - 內田早苗: npcs/內田早苗.md
+      - 澤口真由子: npcs/澤口真由子.md
+      - 中岡慎太郎: npcs/中岡慎太郎.md
+      - 安倍謙三: npcs/安倍謙三.md
+      - 鬼頭祈: npcs/鬼頭祈.md
+      - 修羅: npcs/修羅.md
+      - 安格羅米爾: npcs/安格羅米爾.md
+      - 犬山博久: npcs/犬山博久.md
+      - 伊佐治桂佑: npcs/伊佐治桂佑.md
+      - 室町安夫: npcs/室町安夫.md
+  - 地點:
+      - 彼岸花: places/彼岸花.md

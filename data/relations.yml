@@ -1,0 +1,113 @@
+# 關係圖的資料（hooks/graph.py 讀這個檔，建站時產生 relations/graph.json）
+#
+# 節點（人物、勢力）自動從 docs/characters、docs/npcs、docs/factions 的頁面產生，id 就是頁面標題。
+# 人物放進哪個勢力框：預設看頁面 front matter 的 faction（括號內的文字會忽略），這裡的 parents 可以覆寫。
+# 位置存在 data/positions.json（本機預覽的「編輯位置」模式可以拖曳後存檔）；沒有位置的節點會自動排。
+
+# 關係的分層（圖上方的開關）。顏色寫在 graph-app/src/Graph.jsx 的 COLORS。
+layers:
+  - {id: family, label: 親屬, default: true}
+  - {id: bond, label: 從屬與往來, default: true}
+  - {id: rival, label: 敵對與競爭, default: true}
+  - {id: debt, label: 人情, default: false}
+
+# 沒有專頁的節點。group: true 是勢力框；unconfirmed: true 會標上「待確認」。
+extra_nodes:
+  - {id: 若宮晴花, kind: NPC, emoji: 👤, parent: 穹蒼之女, text: 23 歲。穹蒼之女幫她逃離了不想要的婚姻。}
+  - {id: 澤城美由紀, kind: NPC, emoji: 👤, parent: 穹蒼之女, text: 35 歲。穹蒼之女幫她離了婚。}
+  - {id: 黑澤雙葉, kind: NPC, emoji: 👤, parent: 穹蒼之女, text: 40 歲。遺傳學學者。}
+  - {id: 永野堂, kind: 勢力, emoji: 🏮, group: true, unconfirmed: true, text: 只出現在白板關係圖上的勢力，來由待確認。}
+  - {id: 永野慎太郎, kind: NPC, emoji: 👤, parent: 永野堂, unconfirmed: true, text: 白板上永野堂的首領，待確認。}
+  # 自維黨的三個派系（框）
+  - {id: 鷹派, kind: 派系, emoji: 🦅, group: true, parent: 自維黨, text: 自維黨現任領導層，以強烈反吸血鬼為賣點，要武裝人民、攻打吸血鬼。}
+  - {id: 鴿派, kind: 派系, emoji: 🕊️, group: true, parent: 自維黨, text: 自維黨裡被邊緣化的舊時代勢力。}
+  - {id: 激進改革派, kind: 派系, emoji: 🔥, group: true, parent: 自維黨, text: 為了擴大黨的影響力不擇手段的派系，神田進次郎所屬。}
+  # 方舟成員（補充文獻）
+  - {id: 若宮朝陽, kind: NPC, emoji: 🦅, sub: 凡人・察覺者, parent: 方舟, text: 政治世家若宮家的么子，代號「蒼鷹」。和真司一直維持著朋友以上、戀人未滿的關係；大學畢業後從政支援真司。}
+  - {id: 岸本湊, kind: NPC, emoji: 🦉, sub: 凡人・學者, parent: 方舟, text: 創世紀的幹部，管控金流，代號「角鴞」。負責所有吃力不討好的工作。}
+  - {id: 上妻留依, kind: NPC, emoji: 🕊️, sub: 能者・巫師, parent: 方舟, text: 古老神道世家的女巫，代號「丹頂鶴」。}
+  - {id: 大野透, kind: NPC, emoji: 🐺, sub: 夜眷・狼人, parent: 方舟, text: 隸屬於創世紀的狼人，領地在南麻布十番，代號「灰狼」。原本臥底要暗殺真司，失敗後反被真司馴服。}
+  - {id: 河井新太, kind: NPC, emoji: 🍸, sub: 能者・巫師, parent: 方舟, text: 巫師酒吧的倖存者，在狼人酒吧工作，深受真司的教義吸引而加入創世紀。}
+
+# 覆寫或補充「放在哪個框裡」。勢力之間的上下層也寫在這裡。
+parents:
+  自維黨: 創世紀
+  宇佐美集團: 創世紀
+  穹蒼之女: 創世紀
+  方舟: 創世紀
+  宇佐美真司: 方舟
+  若宮竹虎: 鷹派
+  根辻律: 鴿派
+  安倍謙三: 鴿派
+  內田早苗: 激進改革派
+  神田進次郎: 激進改革派
+  澤口真由子: 激進改革派
+  中岡慎太郎: 激進改革派
+  黑羚運輸: 宇佐美集團      # 白板資訊，待確認
+  伊蘭尼爾: 永野堂          # 白板資訊，待確認
+
+# 最外層的排列順序（自動排版用；沒列到的排在後面）
+order: [創世紀, 鬼頭組, 永野堂, 夢想家, 東京司法協會, 東京區域自治團體, 守民黨, 修羅, 安格羅米爾]
+
+# 關係線。dir：to（from → to，預設）、both（雙向）、none（沒有方向）
+# label 是線上的短標籤，note 是滑鼠移上去與簡介欄顯示的說明。
+# 之後要依集數檢視時，可以加 since: <集數檔名>、until: <集數檔名>（目前程式還沒有使用）。
+edges:
+  # ---- 親屬 ----
+  - {from: 宇佐美真司, to: 茉莉, type: family, dir: none, label: 夫妻, note: 學生時代的同學，各有各的事業。}
+  - {from: 宇佐美真司, to: 宇佐美真理繪, type: family, label: 父女, note: 真理繪是真司與茉莉的親生女兒。}
+  - {from: 茉莉, to: 宇佐美真理繪, type: family, label: 母女, note: 真理繪是穹蒼之女裡唯一和茉莉有血緣關係的人。}
+  - {from: 茉莉, to: 綾目琉璃, type: family, label: 養母女, note: 琉璃是茉莉的養女。}
+  - {from: 綾目琉璃, to: 綾目真理子, type: family, label: 養母女, note: 琉璃收養了真理子，也教她魔法。}
+  - {from: 綾目真理子, to: 綾目真實, type: family, label: 養子, note: 真實的表面身分是真理子的養子，實際上是她保護的魔偶。}
+  - {from: 神田進次郎, to: 神田司, type: family, label: 養父子, note: 司是裝著吸血鬼靈魂的魔偶，被進次郎收為養子。}
+  - {from: 鬼頭祈, to: 天邪, type: family, label: 收養, note: 奶奶把剛轉生到東京的天邪撿回來收養，替他取了名字。}
+  - {from: 宇佐美真司, to: 根辻律, type: family, dir: none, label: 情人, note: 大學時代認識的秘密戀人，方舟的「信天翁」；想替真司復仇。}
+  - {from: 宇佐美惠子, to: 宇佐美真司, type: family, label: 母子, note: 真司是惠子選定的繼承人，接下了宇佐美集團的大部分股份。}
+  - {from: 宇佐美真司, to: 岸本湊, type: family, dir: none, label: 情人, note: 名義上是秘密戀人，岸本本人認為比較像各取所需。}
+  - {from: 宇佐美真司, to: 上妻留依, type: family, dir: none, label: 情人, note: 真司的秘密戀人之一。}
+  - {from: 宇佐美真司, to: 大野透, type: family, dir: none, label: 情人, note: 臥底暗殺失敗、反被真司馴服的狼人，成了他的戀人。}
+  - {from: 宇佐美真司, to: 若宮朝陽, type: family, dir: none, label: 戀人未滿, note: 從大學時代就一直維持著朋友以上、戀人未滿的關係。}
+
+  # ---- 從屬與往來 ----
+  - {from: 內田早苗, to: 神田進次郎, type: bond, label: 導師, note: 早苗公開宣布進次郎是接班人、「黨的新希望」。}
+  - {from: 神田進次郎, to: 澤口真由子, type: bond, label: 核心圈, note: 說客，負責黨內外的協商與遊說。}
+  - {from: 神田進次郎, to: 中岡慎太郎, type: bond, label: 核心圈, note: 刺客，在忠誠與黑暗過往之間掙扎。}
+  - {from: 神田進次郎, to: 安倍謙三, type: bond, label: 核心圈, note: 失勢的前總管，和進次郎有政治交易。}
+  - {from: 神田進次郎, to: 根辻律, type: bond, label: 信任, note: 進次郎在黨高層中仍然信任的人。}
+  - {from: 安格羅米爾, to: 天邪, type: bond, label: 前主人, note: 十年前殺死了天邪，如今要他立刻回去。}
+  - {from: 天邪, to: 黑羚運輸, type: bond, label: 任職, note: 天邪在這裡工作，替彼岸花進貨。}
+  - {from: 伊蘭尼爾, to: 神田司, type: bond, label: 照顧, note: 伊蘭尼爾和司住在同一個屋簷下，像大哥哥一樣照顧他。}
+  - {from: 伊蘭尼爾, to: 犬山博久, type: bond, label: 結識, note: 經真理子介紹認識；伊蘭尼爾懷疑他知道的比表面上更多。}
+  - {from: 綾目真理子, to: 天邪, type: bond, dir: both, label: 合夥, note: 兩人正計畫從夢想家手中奪走鳳凰蛋。}
+  - {from: 宇佐美真理繪, to: 神田進次郎, type: bond, label: 引薦, note: 進次郎經由真理繪進入創世紀的核心圈。}
+  - {from: 神田進次郎, to: 伊蘭尼爾, type: bond, label: 收留, note: 剛到東京的伊蘭尼爾被進次郎的黑頭車撞到，進次郎收留了這個沒有證件的天使；後來伊蘭尼爾救了進次郎的手下中岡慎太郎一命。}
+  - {from: 天邪, to: 彼岸花, type: bond, label: 經營, note: 天邪替鬼頭組經營這間公關俱樂部。}
+  - {from: 伊蘭尼爾, to: 彼岸花, type: bond, label: 男公關, note: 不會說謊、很難教的新人男公關。}
+  - {from: 室町安夫, to: 彼岸花, type: bond, label: 常客, note: 守民黨的高層，不能讓人知道自己流連這種場所。}
+  - {from: 神田進次郎, to: 彼岸花, type: bond, label: 常客, note: 私下來這裡和吸血鬼交朋友。}
+
+  # ---- 敵對與競爭 ----
+  - {from: 夢想家, to: 穹蒼之女, type: rival, label: 追殺, note: 夢想家渴望奪取穹蒼之女的魔偶技術，曾把她們追殺到幾乎滅絕。}
+  - {from: 東京司法協會, to: 東京區域自治團體, type: rival, dir: both, label: 敵對, note: 一方以司法之名裁決所有人，一方主張各區自治。}
+  - {from: 自維黨, to: 守民黨, type: rival, dir: both, label: 政敵, note: 激進的左派政黨與偏右的保守政黨。}
+  - {from: 自維黨, to: 鬼頭組, type: rival, label: 開戰, note: 自維黨現任領導層正對吸血鬼發動全面戰爭。}
+  - {from: 修羅, to: 彼岸花, type: rival, label: 搶市場, note: 修羅在對面開了同類型的俱樂部「石蒜」，一步步侵蝕彼岸花的市場。}
+  - {from: 神田進次郎, to: 若宮竹虎, type: rival, label: 計畫除掉, note: 進次郎的改革目標之一。}
+  - {from: 伊蘭尼爾, to: 東京司法協會, type: rival, label: 敵者, note: 協會偷走了伊蘭尼爾看守的裁決之書。}
+  - {from: 天邪, to: 夢想家, type: rival, label: 奪鳳凰蛋, note: 鳳凰蛋在夢想家手上，天邪計畫把它偷出來。}
+  - {from: 宇佐美真理繪, to: 宇佐美集團, type: rival, label: 爭奪正統, note: 真理繪正和集團裡其他打著真司名號的人對抗。}
+
+  # ---- 人情（from 欠 to）----
+  - {from: 伊蘭尼爾, to: 神田進次郎, type: debt, label: 欠 2 筆, note: 被進次郎的黑頭車撞到後，進次郎收留了他。}
+  - {from: 伊蘭尼爾, to: 綾目真理子, type: debt, label: 欠 1 筆, note: 真理子把他介紹給東京區域自治團體的犬山博久。}
+  - {from: 伊蘭尼爾, to: 天邪, type: debt, label: 欠 1 筆, note: 天邪讓他在彼岸花當男公關。}
+  - {from: 神田進次郎, to: 伊蘭尼爾, type: debt, label: 欠 1 筆, note: 伊蘭尼爾救了中岡慎太郎一命。}
+  - {from: 神田進次郎, to: 綾目真理子, type: debt, label: 欠 2 筆, note: 真理子把他介紹給宇佐美真理繪；又用危險魔法替他造出養子神田司。}
+  - {from: 神田進次郎, to: 天邪, type: debt, label: 欠 2 筆, note: 進次郎是彼岸花的常客，私下和吸血鬼交朋友。}
+  - {from: 天邪, to: 神田進次郎, type: debt, label: 欠 1 筆, note: 天邪的人偷了自維黨的金色人魚煮來吃，進次郎替他求情。}
+  - {from: 天邪, to: 伊蘭尼爾, type: debt, label: 欠 1 筆, note: 伊蘭尼爾決心在他墮落得更深之前拯救他。}
+  - {from: 天邪, to: 綾目真理子, type: debt, label: 欠 2 筆, note: 鳳凰蛋計畫的合夥人，彼此各欠對方。}
+  - {from: 綾目真理子, to: 伊蘭尼爾, type: debt, label: 欠 1 筆, note: 夢想家追殺她和真實時，伊蘭尼爾保護了他們。}
+  - {from: 綾目真理子, to: 天邪, type: debt, label: 欠 3 筆, note: 她把天邪的下落透露給安格羅米爾（1 筆）；鳳凰蛋計畫的合夥人（2 筆）。}
+  - {from: 室町安夫, to: 天邪, type: debt, label: 欠 3 筆, note: 身為政客卻流連彼岸花，這個把柄握在天邪手上。}
