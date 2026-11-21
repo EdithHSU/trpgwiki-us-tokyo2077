@@ -132,6 +132,21 @@
   .other b { color: var(--text); font-weight: 500; }
   .other-note { display: block; font-size: 13px; color: var(--text-3); padding-left: 1em; white-space: pre-wrap; }
 
+  /* 置頂的自由留言欄 */
+  .free { border: 1px solid var(--line); border-left: 3px solid var(--text); border-radius: 8px; padding: 16px; margin: 0 0 24px; background: var(--bg-2); }
+  .free-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .free h2 { font-size: 18px; margin: 0 0 6px; }
+  .free-count { font-size: 12px; color: var(--text-3); white-space: nowrap; }
+  #freeText {
+    width: 100%; font: inherit; font-size: 15px; line-height: 1.6; color: var(--text); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; min-height: 96px; resize: vertical;
+  }
+  .free-others { margin-top: 10px; font-size: 14px; }
+  .free-other { padding: 8px 0; border-top: 1px dashed var(--line); }
+  .free-who { display: flex; gap: 8px; align-items: baseline; }
+  .free-who span { font-size: 12px; color: var(--text-3); }
+  .free-body { color: var(--text-2); white-space: pre-wrap; margin-top: 2px; }
+
   .empty { color: var(--text-3); padding: 24px 0; text-align: center; }
   .hidden { display: none !important; }
 
@@ -183,6 +198,16 @@
   </section>
 
   <div id="app">
+    <section class="free" id="free" aria-labelledby="freeTitle">
+      <div class="free-head">
+        <h2 id="freeTitle">給整理者的留言</h2>
+        <span class="free-count" id="freeCount">0 / 1000</span>
+      </div>
+      <p class="group-desc">想修改網站內容、補充設定、回報錯誤，都可以直接寫在這裡（例如「彼岸花在新宿歌舞伎町」「天邪的頁面漏了……」）。整理者會把留言整理成<b>修改建議</b>，確認後才會改網站，不會直接照著改。</p>
+      <textarea id="freeText" maxlength="1000" rows="4" placeholder="自由輸入，最多 1000 字" aria-labelledby="freeTitle"></textarea>
+      <div class="free-others" id="freeOthers"></div>
+    </section>
+
     <div class="callout">
       <b>怎麼填</b>
       <ol class="only-online">
@@ -243,8 +268,13 @@ const ITEMS = [
 /* ---------- 設定 ----------
    Google Apps Script 網頁應用程式的網址（後端與安裝步驟見 wiki\tools\confirm-sheet.gs）。
    空白時是本機模式：答案只存在這個瀏覽器，用「儲存 JSON」存檔。 */
-const API_URL = '';  // 部署 tools/confirm-sheet.gs 後填入網頁應用程式網址
+const API_URL = 'https://script.google.com/macros/s/AKfycbwsQaO1aDAmGxbl7M8VDInQSqWRH1WsZTPefMjoAmCJC6MzqObGekRyLNJahyt0dIgh/exec';  // tools/confirm-sheet.gs 部署的網頁應用程式（2026-11-22）
 const ONLINE = !!API_URL;
+
+/* 置頂的自由留言欄：存成一般答案的一列（id = free-text，內容放在 note 欄，最多 1000 字），
+   不算在題目進度裡。整理者讀取時只把它當成「修改建議」的來源，不直接照著改網站。 */
+const FREE_ID = 'free-text';
+const FREE_MAX = 1000;
 if (ONLINE) document.body.classList.add('online');
 
 /* ---------- 狀態 ---------- */
@@ -345,9 +375,34 @@ function othersHTML(id) {
 
 function updateOthers() {
   document.querySelectorAll('.card').forEach(card => { card.querySelector('.others-slot').innerHTML = othersHTML(card.dataset.id); });
+  renderFreeOthers();
 }
 
+/* ---------- 置頂留言欄 ---------- */
+function renderFree() {
+  const ta = $('#freeText');
+  const mine = answers[FREE_ID]?.note || '';
+  if (document.activeElement !== ta) ta.value = mine;
+  $('#freeCount').textContent = `${ta.value.length} / ${FREE_MAX}`;
+  renderFreeOthers();
+}
+function renderFreeOthers() {
+  const rows = others[FREE_ID] || [];
+  $('#freeOthers').innerHTML = rows.length
+    ? `<div class="others-title">其他人的留言（${rows.length}）</div>${rows.map(r =>
+        `<div class="free-other"><div class="free-who"><b>${esc(r.name)}</b>${r.updated ? `<span>${esc(r.updated)}</span>` : ''}</div><div class="free-body">${esc(r.note)}</div></div>`).join('')}`
+    : '';
+}
+$('#freeText').addEventListener('input', e => {
+  const a = get(FREE_ID);
+  a.note = e.target.value.slice(0, FREE_MAX);
+  a.status = '';
+  $('#freeCount').textContent = `${a.note.length} / ${FREE_MAX}`;
+  persist(FREE_ID);
+});
+
 function render() {
+  renderFree();
   const list = $('#list');
   let html = '', shown = 0;
   for (const g of GROUPS) {
@@ -562,6 +617,8 @@ $('#btnExport').addEventListener('click', async () => {
     exported_at: new Date().toISOString(),
     total: ITEMS.length,
     people: [...new Set(lastRows.map(r => r.name))],
+    // 置頂留言欄：整理者只能拿來列修改建議，不可直接照著改網站
+    free_text: lastRows.filter(r => r.id === FREE_ID).map(r => ({ name: r.name, text: r.note, updated: r.updated })),
     items: ITEMS.map(i => ({
       ...baseItem(i),
       responses: lastRows.filter(r => r.id === i.id).map(r => ({
@@ -595,6 +652,7 @@ function buildExport() {
     exported_at: new Date().toISOString(),
     total: ITEMS.length,
     answered: ITEMS.filter(isDone).length,
+    free_text: answers[FREE_ID]?.note || null,
     items: ITEMS.map(i => {
       const a = answers[i.id] || {};
       return {
@@ -653,6 +711,7 @@ $('#fileInput').addEventListener('change', async e => {
     const data = JSON.parse(await file.text());
     const items = Array.isArray(data.items) ? data.items : [];
     let n = 0;
+    if (typeof data.free_text === 'string') answers[FREE_ID] = { ...blank(), note: data.free_text.slice(0, FREE_MAX) };
     for (const it of items) {
       if (!ITEMS.some(i => i.id === it.id)) continue;
       answers[it.id] = {
