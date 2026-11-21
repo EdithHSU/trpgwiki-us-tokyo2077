@@ -17033,7 +17033,7 @@ function Sp({ data: e, base: t }) {
 			target: e.to,
 			type: "relation",
 			className: t ? "rg-edge-on" : O ? "rg-dim-edge" : "rg-edge-idle",
-			zIndex: (t ? 6 : hp) - D(e),
+			zIndex: (t ? 110 : hp) - D(e),
 			markerEnd: e.dir === "none" ? void 0 : bp(e.type),
 			markerStart: e.dir === "both" ? bp(e.type) : void 0,
 			style: {

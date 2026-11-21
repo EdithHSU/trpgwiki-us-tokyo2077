@@ -90,8 +90,9 @@ function RelationEdge({ id, source, target, markerEnd, markerStart, style, data 
 const edgeTypes = { relation: RelationEdge };
 
 /* ---------- 主畫面 ---------- */
-/* 圖層順序（由下往上）：關係線 → 勢力框（越內層越上面）→ 人物卡片。
-   線畫在框底下，框的標題與「待確認」標籤、人物卡片都不會被線壓到。 */
+/* 圖層順序（由下往上）：關係線 → 勢力框（越內層越上面）→ 人物卡片 → 聚焦中的關係線。
+   平常線畫在框底下，框的標題與「待確認」標籤、人物卡片都不會被線壓到；
+   點選或滑鼠停在某張卡片時，和它相關的線會提到卡片上方，才看得清楚連到哪裡。 */
 const Z_EDGE = 5, Z_GROUP = 10, Z_CARD = 100;
 
 function toFlowNode(n, depth) {
@@ -188,7 +189,8 @@ function Inner({ data, base }) {
       id: e.id, source: e.from, target: e.to, type: 'relation',
       className: hl ? 'rg-edge-on' : focus ? 'rg-dim-edge' : 'rg-edge-idle',
       // React Flow 會把連到框內節點的線，自動加上兩端節點裡較高的 z-index；這裡先扣掉，讓所有線都留在 Z_EDGE
-      zIndex: (hl ? Z_EDGE + 1 : Z_EDGE) - edgeLift(e),
+      // 平常線在卡片底下；聚焦（點選或滑鼠停在卡片、線上）時，相關的線與標籤提到卡片上方
+      zIndex: (hl ? Z_CARD + 10 : Z_EDGE) - edgeLift(e),
       markerEnd: e.dir === 'none' ? undefined : arrow(e.type),
       markerStart: e.dir === 'both' ? arrow(e.type) : undefined,
       style: { stroke: COLORS[e.type], strokeWidth: hl ? 2.2 : 1.2, strokeDasharray: DASH[e.type] },
