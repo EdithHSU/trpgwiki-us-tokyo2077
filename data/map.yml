@@ -1,0 +1,99 @@
+# 互動地圖的資料（hooks/mapdata.py 讀這個檔，建站時產生 map/map.json，給 docs/map/app/map.js 使用）
+#
+# 欄位沿用原始成品（2077 東京互動勢力地圖）的資料結構：
+#   factions  勢力：id、name、nameEn、color、summary
+#   wards     行政區：code（JIS 代碼）、slug、name、faction、contested、summary
+#   landmarks 地標：id、name、ward、position［經度, 緯度］、summary、detail
+#   events    事件：id、title、ward、position、session、factions、summary、excerpt
+# 本站另外加的選填欄位：
+#   page      對應的 wiki 頁面標題（勢力、地點、人物都可以），會連結到該頁；勢力沒寫 name／summary 時取自該頁
+#   people    相關人物的頁面標題清單，面板裡會列出並連結
+#   mock      true 表示是模擬資料，介面上會標「模擬」
+# 行政區界線：docs/map/tokyo23.geojson（國土數值情報 N03，用 code 對應）。
+
+meta:
+  title: 2077 東京
+  version: "0.1"
+  note: 行政區界線以國土數值情報 N03 GeoJSON 載入，以 code（JIS 行政區代碼）對應。
+  coordinate: landmarks / events 的 position 為［經度, 緯度］，僅為大概位置
+
+# 勢力。id 用 wiki 勢力頁的標題（name、summary、連結會自動取自該頁）。
+# 只列有地盤，或被地標、事件用到的勢力。
+factions:
+  - {id: 自維黨, nameEn: Liberal Restoration Party, color: "#3B6EF5"}
+  - {id: 鬼頭組, nameEn: Kitō-gumi, color: "#E5533D"}
+  - {id: 穹蒼之女, nameEn: Daughters of the Firmament, color: "#8E5BD9"}
+  - {id: 夢想家, nameEn: The Dreamers, color: "#D9468F"}
+
+# 23 區。faction 沒寫就是「未設定」（灰色）。
+# 依據：白板地圖上的「自」與團錄提到的「東京正中央的三角形」（2026-11-21 使用者同意先這樣標）。
+wards:
+  - {code: "13101", slug: chiyoda, name: 千代田區, faction: 自維黨, summary: 自維黨的地盤之一，和港區、新宿構成「東京正中央的三角形」。}
+  - {code: "13102", slug: chuo, name: 中央區}
+  - {code: "13103", slug: minato, name: 港區, faction: 自維黨, summary: 自維黨的據點所在，黨部就設在這裡。}
+  - {code: "13104", slug: shinjuku, name: 新宿區, faction: 自維黨, summary: 自維黨的地盤之一，和千代田、港區構成「東京正中央的三角形」。}
+  - {code: "13105", slug: bunkyo, name: 文京區}
+  - {code: "13106", slug: taito, name: 台東區, summary: 上野一帶有綾目真理子的藥草店「甘露」。}
+  - {code: "13107", slug: sumida, name: 墨田區}
+  - {code: "13108", slug: koto, name: 江東區}
+  - {code: "13109", slug: shinagawa, name: 品川區}
+  - {code: "13110", slug: meguro, name: 目黑區}
+  - {code: "13111", slug: ota, name: 大田區}
+  - {code: "13112", slug: setagaya, name: 世田谷區}
+  - {code: "13113", slug: shibuya, name: 澀谷區, contested: true, summary: 神田進次郎的改革目標之一，就是替自維黨奪回這裡；奪回之後，就能和既有的三區連成一片。}
+  - {code: "13114", slug: nakano, name: 中野區, summary: 有一間展示奇珍異物的博物館。}
+  - {code: "13115", slug: suginami, name: 杉並區}
+  - {code: "13116", slug: toshima, name: 豐島區}
+  - {code: "13117", slug: kita, name: 北區}
+  - {code: "13118", slug: arakawa, name: 荒川區}
+  - {code: "13119", slug: itabashi, name: 板橋區}
+  - {code: "13120", slug: nerima, name: 練馬區}
+  - {code: "13121", slug: adachi, name: 足立區}
+  - {code: "13122", slug: katsushika, name: 葛飾區}
+  - {code: "13123", slug: edogawa, name: 江戶川區, summary: 東邊隔著舊江戶川就是千葉縣浦安市的東京迪士尼樂園。}
+
+# 地標。position 是大概位置。彼岸花的位置還不知道，先不放。
+landmarks:
+  - id: lm-ishinto
+    name: 自維黨黨部
+    ward: "13103"
+    position: [139.7454, 35.6595]
+    page: 自維黨
+    summary: 自維黨的據點。
+    detail: 黨部的池子裡，從宇佐美真司的時代就養著一條「金色人魚」：魚的身體、像人的臉，據說會預言，吃了它的肉能長命百歲。後來被天邪的人偷走煮來吃了。
+    people: [神田進次郎, 天邪]
+  - id: lm-amrita
+    name: 甘露（Amrita）
+    ward: "13106"
+    position: [139.7745, 35.7125]
+    page: 綾目真理子
+    summary: 綾目真理子的藥草店，也是穹蒼之女聚集的地方。
+    detail: 店裡擺滿酊劑與藥膏，也提供香氛與芳療。許多人會來這裡向真理子求助；這裡是她力量的中心，她的危險魔法只有在店裡才能施展。
+    people: [綾目真理子]
+  - id: lm-museum
+    name: 中野的珍奇博物館
+    ward: "13114"
+    position: [139.6657, 35.7075]
+    summary: 展示各種奇珍異物的博物館。
+    detail: 凡人以為館內的展品都是假的，業內人都知道是真的，所以管理很嚴密。
+  - id: lm-disney
+    name: 東京迪士尼樂園
+    ward: "13123"
+    position: [139.8804, 35.6329]
+    page: 夢想家
+    summary: 和夢想家有關聯的地方，鳳凰蛋就放在這裡。
+    detail: 實際位於千葉縣浦安市，隔著舊江戶川與江戶川區相鄰，不在東京 23 區內。鳳凰蛋對夢想家正在進行的儀式十分重要，天邪與綾目真理子正計畫把它奪走。
+    people: [天邪, 綾目真理子]
+
+# 事件。目前還沒有正式劇情的團錄，以下是一則模擬資料，收錄正式集數後整批替換。
+events:
+  - id: ev-mock-01
+    mock: true
+    title: 黨部池畔的空池
+    ward: "13103"
+    position: [139.7395, 35.6505]
+    session: 1
+    factions: [自維黨, 鬼頭組]
+    people: [神田進次郎, 天邪]
+    summary: （模擬資料）黨部的金色人魚失蹤，鷹派開始追查犯人，神田進次郎得在消息傳開前把事情壓下來。
+    excerpt: 池水平靜得過分。進次郎盯著空蕩蕩的水面，把手機螢幕上的訊息又讀了一遍——「放心，味道很好」——然後默默按下刪除。

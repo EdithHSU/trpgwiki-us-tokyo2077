@@ -17075,6 +17075,9 @@ function Sp({ data: e, base: t }) {
 		}), 300);
 		return () => clearTimeout(e);
 	}, [v, n]), (0, _.useEffect)(() => {
+		let e = document.querySelectorAll("[data-open-full=\"relation-graph\"]"), t = () => y(!0);
+		return e.forEach((e) => e.addEventListener("click", t)), () => e.forEach((e) => e.removeEventListener("click", t));
+	}, []), (0, _.useEffect)(() => {
 		let e = (e) => {
 			e.key === "Escape" && (y(!1), u(null));
 		};

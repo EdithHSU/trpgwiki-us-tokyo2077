@@ -3,14 +3,17 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "關係圖頁面用的 React Flow 小程式；打包輸出到 ../docs/relations/app/",
+  "description": "關係圖頁面用的 React Flow 小程式；與互動地圖（three.js）；分別打包輸出到 ../docs/relations/app/ 與 ../docs/map/app/",
   "scripts": {
-    "build": "vite build"
+    "build": "vite build && vite build --config vite.map.config.js",
+    "build:graph": "vite build",
+    "build:map": "vite build --config vite.map.config.js"
   },
   "dependencies": {
     "@xyflow/react": "^12.12.1",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "three": "^0.160.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.3.0",

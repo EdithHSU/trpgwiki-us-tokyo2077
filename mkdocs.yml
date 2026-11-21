@@ -37,6 +37,7 @@ plugins:
 hooks:
   - hooks/previews.py      # hover 預覽，必須在 backlinks.py 之前
   - hooks/backlinks.py
+  - hooks/mapdata.py       # 地圖資料（data/map.yml → map/map.json）
   - hooks/graph.py         # 關係圖資料（data/relations.yml → relations/graph.json）
   - hooks/notion.py        # 必須在 backlinks.py 之後
 
@@ -101,6 +102,7 @@ nav:
   - 時間線: timeline.md
   - 名詞表: glossary.md
   - 關係圖: relations/index.md
+  - 地圖: map/index.md
   - 玩家角色:
       - 神田進次郎: characters/神田進次郎.md
       - 綾目真理子: characters/綾目真理子.md

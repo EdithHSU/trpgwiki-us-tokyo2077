@@ -57,6 +57,13 @@ hide:
       <div class="notion-card__desc">人物與勢力之間的關係，可以縮放、點選</div>
     </div>
   </a>
+  <a class="notion-card" href="map/">
+    <div class="notion-card__cover notion-card__cover--orange"><span>🗾</span></div>
+    <div class="notion-card__body">
+      <div class="notion-card__title">地圖</div>
+      <div class="notion-card__desc">東京 23 區的勢力分布、地標與事件</div>
+    </div>
+  </a>
   <a class="notion-card" href="timeline/">
     <div class="notion-card__cover notion-card__cover--red"><span>🗓️</span></div>
     <div class="notion-card__body">

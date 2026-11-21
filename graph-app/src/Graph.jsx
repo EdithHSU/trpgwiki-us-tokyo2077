@@ -214,6 +214,14 @@ function Inner({ data, base }) {
     return () => clearTimeout(t);
   }, [full, flow]);
 
+  // 頁面上的「全螢幕開啟」按鈕（data-open-full="relation-graph"）
+  useEffect(() => {
+    const btns = document.querySelectorAll('[data-open-full="relation-graph"]');
+    const open = () => setFull(true);
+    btns.forEach((b) => b.addEventListener('click', open));
+    return () => btns.forEach((b) => b.removeEventListener('click', open));
+  }, []);
+
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') { setFull(false); setSelected(null); } };
     window.addEventListener('keydown', onKey);

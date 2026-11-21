@@ -1099,3 +1099,33 @@ body {
   color: var(--n-text-2);
 }
 .wiki-preview__text { color: var(--n-text-2); }
+
+/* ---------- 關係圖、地圖頁的「全螢幕開啟」按鈕（javascripts 由各頁的小程式接手） ---------- */
+.md-typeset .viz-open {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 24px 0;
+}
+.md-typeset .viz-open button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--n-text);
+  color: var(--n-bg);
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: rgba(15, 15, 15, .1) 0 1px 2px;
+  transition: transform .15s, box-shadow .15s, opacity .15s;
+}
+.md-typeset .viz-open button:hover { transform: translateY(-1px); box-shadow: var(--n-shadow); }
+.md-typeset .viz-open button:active { transform: none; opacity: .85; }
+.md-typeset .viz-open button:focus-visible { outline: 2px solid var(--n-blue); outline-offset: 2px; }
+.md-typeset .viz-open__icon { font-size: 1.15em; line-height: 1; }
+.md-typeset .viz-open__hint { font-size: var(--fs-meta); color: var(--n-text-2); }
